@@ -1,66 +1,55 @@
-require("dotenv").config();
-const express = require("express");
-const cors = require("cors");
-const mysql = require("mysql2/promise");
+const API = "https://musicasbackend-six.vercel.app";
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+const listaMusicas = document.getElementById("listaMusicas");
 
-const db = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-});
+async function carregarMusicas() {
+    listaMusicas.innerHTML = "<p>Carregando...</p>";
 
-// Listar todas
-app.get("/musicas", async (req, res) => {
-  const [rows] = await db.query("SELECT * FROM musicas");
-  res.json(rows);
-});
+    try {
+        const resposta = await fetch(`${API}/`);
+        const musicas = await resposta.json();
 
-// Buscar por id
-app.get("/musicas/:id", async (req, res) => {
-  const [rows] = await db.query("SELECT * FROM musicas WHERE id = ?", [req.params.id]);
-  if (rows.length === 0) return res.status(404).json({ erro: "Música não encontrada" });
-  res.json(rows[0]);
-});
+        listaMusicas.innerHTML = "";
 
-// Criar
-app.post("/musicas", async (req, res) => {
-  const { titulo, artista, album, ano, genero } = req.body;
-  if (!titulo || !artista) return res.status(400).json({ erro: "Título e artista são obrigatórios" });
-  const [result] = await db.query(
-    "INSERT INTO musicas (titulo, artista, album, ano, genero) VALUES (?, ?, ?, ?, ?)",
-    [titulo, artista, album, ano, genero]
-  );
-  res.status(201).json({ id: result.insertId, titulo, artista, album, ano, genero });
-});
+        if (musicas.length === 0) {
+            listaMusicas.innerHTML = "<p>Nenhuma música cadastrada.</p>";
+            return;
+        }
 
-// Atualizar
-app.put("/musicas/:id", async (req, res) => {
-  const { titulo, artista, album, ano, genero } = req.body;
-  const [result] = await db.query(
-    "UPDATE musicas SET titulo = ?, artista = ?, album = ?, ano = ?, genero = ? WHERE id = ?",
-    [titulo, artista, album, ano, genero, req.params.id]
-  );
-  if (result.affectedRows === 0) return res.status(404).json({ erro: "Música não encontrada" });
-  res.json({ mensagem: "Música atualizada" });
-});
+        for (const musica of musicas) {
+            const card = document.createElement("article");
+            card.className = "musica";
+            card.innerHTML = `
+                <h2>${musica.titulo}</h2>
+                <p class="artista">${musica.artista}</p>
+                <p class="detalhes">${musica.genero} | ${musica.ano} | ${musica.duracao} min</p>
+                <div class="acoes">
+                    <a class="editar" href="editar.html?id=${musica.id}">Editar</a>
+                    <button class="apagar">Apagar</button>
+                </div>
+            `;
 
-// Deletar
-app.delete("/musicas/:id", async (req, res) => {
-  const [result] = await db.query("DELETE FROM musicas WHERE id = ?", [req.params.id]);
-  if (result.affectedRows === 0) return res.status(404).json({ erro: "Música não encontrada" });
-  res.json({ mensagem: "Música removida" });
-});
+            card.querySelector(".apagar").addEventListener("click", () => apagarMusica(musica.id));
 
-// Tratamento de erros
-app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(500).json({ erro: "Erro no servidor" });
-});
+            listaMusicas.appendChild(card);
+        }
+    } catch (erro) {
+        console.error(erro);
+        listaMusicas.innerHTML = "<p>Erro ao carregar as músicas.</p>";
+    }
+}
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
+async function apagarMusica(id) {
+    if (!confirm("Tem certeza que quer apagar esta música?")) return;
+
+    const resposta = await fetch(`${API}/${id}`, { method: "DELETE" });
+
+    if (!resposta.ok) {
+        alert("Erro ao apagar a música.");
+        return;
+    }
+
+    carregarMusicas();
+}
+
+carregarMusicas();
