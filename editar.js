@@ -1,64 +1,62 @@
-const API = "https://musicasbackend-six.vercel.app";
+const urlBackend = "http://localhost:3000"
 
-const id = new URLSearchParams(window.location.search).get("id");
+const parametros = new URLSearchParams(window.location.search)
+const id = parametros.get("id")
 
-const campoTitulo = document.getElementById("titulo");
-const campoArtista = document.getElementById("artista");
-const campoGenero = document.getElementById("genero");
-const campoAno = document.getElementById("ano");
-const campoDuracao = document.getElementById("duracao");
-const botaoSalvar = document.getElementById("botaoSalvar");
+const inputTitulo = document.getElementById("titulo")
+const inputArtista = document.getElementById("artista")
+const inputGenero = document.getElementById("genero")
+const inputAno = document.getElementById("ano")
+const inputDuracao = document.getElementById("duracao")
 
-async function carregarMusica() {
-    if (!id) {
-        alert("Nenhuma música selecionada.");
-        window.location.href = "index.html";
-        return;
-    }
+const botaoSalvar = document.getElementById("botaoSalvar")
 
-    const resposta = await fetch(`${API}/${id}`);
+async function buscarMusica() {
+    const resposta = await fetch(`${urlBackend}/musica/${id}`)
+    const musica = await resposta.json()
 
-    if (!resposta.ok) {
-        alert("Música não encontrada.");
-        window.location.href = "index.html";
-        return;
-    }
-
-    const musica = await resposta.json();
-
-    campoTitulo.value = musica.titulo;
-    campoArtista.value = musica.artista;
-    campoGenero.value = musica.genero;
-    campoAno.value = musica.ano;
-    campoDuracao.value = musica.duracao;
+    inputTitulo.value = musica.titulo
+    inputArtista.value = musica.artista
+    inputGenero.value = musica.genero
+    inputAno.value = musica.ano
+    inputDuracao.value = musica.duracao
 }
 
-botaoSalvar.addEventListener("click", async () => {
+buscarMusica()
+
+botaoSalvar.addEventListener("click", salvarAlteracoes)
+
+async function salvarAlteracoes() {
+    if (
+        inputTitulo.value === "" ||
+        inputArtista.value === "" ||
+        inputGenero.value === "" ||
+        inputAno.value === "" ||
+        inputDuracao.value === ""
+    ) {
+        alert("Preencha todos os campos!")
+        return
+    }
+
     const musica = {
-        titulo: campoTitulo.value.trim(),
-        artista: campoArtista.value.trim(),
-        genero: campoGenero.value.trim(),
-        ano: Number(campoAno.value),
-        duracao: Number(campoDuracao.value),
-    };
-
-    if (!musica.titulo || !musica.artista) {
-        alert("Preencha pelo menos título e artista.");
-        return;
+        titulo: inputTitulo.value,
+        artista: inputArtista.value,
+        genero: inputGenero.value,
+        ano: inputAno.valueAsNumber,
+        duracao: inputDuracao.valueAsNumber
     }
 
-    const resposta = await fetch(`${API}/${id}`, {
+    const resposta = await fetch(`${urlBackend}/editar/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(musica),
-    });
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(musica)
+    })
 
-    if (!resposta.ok) {
-        alert("Erro ao salvar as alterações.");
-        return;
-    }
+    const respostaTransformada = await resposta.json()
 
-    window.location.href = "index.html";
-});
+    alert(respostaTransformada.mensagem)
 
-carregarMusica();
+    window.location.href = "index.html"
+}
