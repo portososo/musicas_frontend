@@ -1,55 +1,42 @@
-const API = "https://musicasbackend-six.vercel.app";
+const urlBackend = "http://localhost:3000"
 
-const listaMusicas = document.getElementById("listaMusicas");
+const listaMusicas = document.getElementById("listaMusicas")
 
-async function carregarMusicas() {
-    listaMusicas.innerHTML = "<p>Carregando...</p>";
+async function buscarMusicas() {
+    const resposta = await fetch(urlBackend)
+    const musicas = await resposta.json()
 
-    try {
-        const resposta = await fetch(`${API}/`);
-        const musicas = await resposta.json();
-
-        listaMusicas.innerHTML = "";
-
-        if (musicas.length === 0) {
-            listaMusicas.innerHTML = "<p>Nenhuma música cadastrada.</p>";
-            return;
-        }
-
-        for (const musica of musicas) {
-            const card = document.createElement("article");
-            card.className = "musica";
-            card.innerHTML = `
+    musicas.forEach((musica) => {
+        listaMusicas.innerHTML += `
+            <article class="musica">
                 <h2>${musica.titulo}</h2>
                 <p class="artista">${musica.artista}</p>
                 <p class="detalhes">${musica.genero} | ${musica.ano} | ${musica.duracao} min</p>
                 <div class="acoes">
                     <a class="editar" href="editar.html?id=${musica.id}">Editar</a>
-                    <button class="apagar">Apagar</button>
+                    <button class="apagar" onclick="apagarMusica(${musica.id})">Apagar</button>
                 </div>
-            `;
-
-            card.querySelector(".apagar").addEventListener("click", () => apagarMusica(musica.id));
-
-            listaMusicas.appendChild(card);
-        }
-    } catch (erro) {
-        console.error(erro);
-        listaMusicas.innerHTML = "<p>Erro ao carregar as músicas.</p>";
-    }
+            </article>
+        `
+    })
 }
+
+buscarMusicas()
 
 async function apagarMusica(id) {
-    if (!confirm("Tem certeza que quer apagar esta música?")) return;
+    const confirmou = confirm("Tem certeza que quer apagar essa música?")
 
-    const resposta = await fetch(`${API}/${id}`, { method: "DELETE" });
-
-    if (!resposta.ok) {
-        alert("Erro ao apagar a música.");
-        return;
+    if (!confirmou) {
+        return
     }
 
-    carregarMusicas();
-}
+    const resposta = await fetch(`${urlBackend}/apagar/${id}`, {
+        method: "DELETE"
+    })
 
-carregarMusicas();
+    const respostaTransformada = await resposta.json()
+
+    alert(respostaTransformada.mensagem)
+
+    window.location.reload()
+}
