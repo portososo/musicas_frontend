@@ -1,31 +1,46 @@
-const API = "https://musicasbackend-six.vercel.app";
+const urlBackend = "http://localhost:3000"
 
-const botaoCadastrar = document.getElementById("botaoCadastrar");
+const inputTitulo = document.getElementById("titulo")
+const inputArtista = document.getElementById("artista")
+const inputGenero = document.getElementById("genero")
+const inputAno = document.getElementById("ano")
+const inputDuracao = document.getElementById("duracao")
 
-botaoCadastrar.addEventListener("click", async () => {
+const botaoCadastrar = document.getElementById("botaoCadastrar")
+
+botaoCadastrar.addEventListener("click", cadastrarMusica)
+
+async function cadastrarMusica() {
+    if (
+        inputTitulo.value === "" ||
+        inputArtista.value === "" ||
+        inputGenero.value === "" ||
+        inputAno.value === "" ||
+        inputDuracao.value === ""
+    ) {
+        alert("Preencha todos os campos!")
+        return
+    }
+
     const musica = {
-        titulo: document.getElementById("titulo").value.trim(),
-        artista: document.getElementById("artista").value.trim(),
-        genero: document.getElementById("genero").value.trim(),
-        ano: Number(document.getElementById("ano").value),
-        duracao: Number(document.getElementById("duracao").value),
-    };
-
-    if (!musica.titulo || !musica.artista) {
-        alert("Preencha pelo menos título e artista.");
-        return;
+        titulo: inputTitulo.value,
+        artista: inputArtista.value,
+        genero: inputGenero.value,
+        ano: inputAno.valueAsNumber,
+        duracao: inputDuracao.valueAsNumber
     }
 
-    const resposta = await fetch(`${API}/`, {
+    const resposta = await fetch(`${urlBackend}/cadastrar`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(musica),
-    });
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(musica)
+    })
 
-    if (!resposta.ok) {
-        alert("Erro ao cadastrar a música.");
-        return;
-    }
+    const respostaTransformada = await resposta.json()
 
-    window.location.href = "index.html";
-});
+    alert(respostaTransformada.mensagem)
+
+    window.location.href = "index.html"
+}
